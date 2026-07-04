@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>KronenKorken</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23C18A3E'/></svg>" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil:wght@700;800&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+:root {
+  --ink:#142026; --ink2:#1C2F35; --paper:#F1E8D6; --paper2:#E6D9BB;
+  --brass:#C18A3E; --brassl:#E8C07C; --brassd:#7C5824;
+  --rust:#A8462C; --rustbg:#3A2620; --moss:#57825F; --mossbg:#20302A;
+  --onink:#DCE6E4; --muted:#8FA6A3; --ondark:#2A2420; --mutedp:#6B5F4F;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; }
+body { display:flex; flex-direction:column; background:var(--ink); color:var(--onink); font-family:'Work Sans',sans-serif; overscroll-behavior:none; }
+.spin { animation:spin 1s linear infinite; display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+button { font-family:'Work Sans',sans-serif; }
+
+header { background:var(--ink2); border-bottom:2px solid var(--brassd); padding:calc(env(safe-area-inset-top) + 12px) 16px 8px; flex-shrink:0; }
+.hrow { display:flex; align-items:center; gap:8px; }
+.htitle { font-family:'Big Shoulders Stencil',sans-serif; font-weight:800; font-size:17px; line-height:1.05; letter-spacing:.5px; color:var(--brassl); flex:1; }
+.hcount { display:flex; flex-direction:column; align-items:flex-end; line-height:1.1; }
+.hnum { font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:600; }
+.hlabel { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+.iconbtn { background:transparent; border:1px solid var(--brassd); color:var(--muted); border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; font-size:14px; }
+.iconbtn:active { transform:scale(.93); }
+
+main { flex:1; overflow-y:auto; padding:16px; -webkit-overflow-scrolling:touch; }
+.view { display:none; flex-direction:column; gap:14px; }
+.view.active { display:flex; }
+.center { align-items:center; text-align:center; }
+
+.search { display:flex; align-items:center; gap:8px; background:var(--ink2); border:1px solid #2A4046; border-radius:10px; padding:10px 12px; }
+.search input { background:transparent; border:none; outline:none; color:var(--onink); font-size:14px; flex:1; font-family:'Work Sans',sans-serif; }
+.search input::placeholder { color:var(--muted); }
+
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:16px 10px; }
+.cell { background:transparent; border:none; padding:0; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; cursor:pointer; }
+.cellno { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--brassl); background:var(--ink2); border:1px solid var(--brassd); border-radius:999px; padding:1px 6px; position:absolute; top:-4px; left:-2px; z-index:1; }
+.cellbrand { font-size:12px; font-weight:600; color:var(--onink); text-align:center; line-height:1.2; max-width:104px; overflow:hidden; text-overflow:ellipsis; }
+.cellcountry { font-size:10px; color:var(--muted); }
+.empty { display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 16px; color:var(--muted); font-size:14px; text-align:center; }
+
+.capframe { position:relative; flex-shrink:0; }
+.capframe svg { position:absolute; inset:0; }
+.capinner { position:absolute; border-radius:50%; overflow:hidden; background:#0F1C20; display:flex; align-items:center; justify-content:center; color:#5C6F6C; }
+.capinner img { width:100%; height:100%; object-fit:cover; }
+
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:600; border:none; cursor:pointer; transition:transform .1s; text-decoration:none; }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+.btn:active:not(:disabled) { transform:scale(.97); }
+.wide { width:100%; }
+.b-brass { background:linear-gradient(135deg,var(--brassl),var(--brass)); color:#2A1D08; }
+.b-primary { background:var(--moss); color:#0E1A12; }
+.b-ghost { background:transparent; color:var(--muted); border:1px solid #2A4046; }
+.b-outline { background:transparent; color:var(--brassl); border:1px solid var(--brassd); }
+.b-rust { background:transparent; color:#E0A08F; border:1px solid var(--rust); }
+.rowgap { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+.card { background:var(--paper); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; width:100%; max-width:320px; }
+.field { display:flex; flex-direction:column; gap:4px; text-align:left; }
+.field span { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--mutedp); font-weight:600; }
+.field input { background:var(--paper2); border:none; border-radius:8px; padding:9px 10px; font-size:14.5px; color:var(--ondark); font-family:'Work Sans',sans-serif; }
+.field input:focus-visible { outline:2px solid var(--brass); }
+.hint { font-size:12px; color:var(--muted); margin:0; }
+
+.result { width:100%; max-width:340px; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.r-rust { background:var(--rustbg); border:1px solid var(--rust); }
+.r-moss { background:var(--mossbg); border:1px solid var(--moss); }
+.rhead { display:flex; align-items:center; gap:8px; font-weight:700; font-size:14.5px; }
+.rpair { display:flex; justify-content:center; gap:22px; }
+.ritem { display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); }
+.rtext { font-size:13px; color:var(--onink); line-height:1.4; margin:0; }
+.candrow { display:flex; flex-wrap:wrap; gap:12px 10px; padding:4px 0; justify-content:center; }
+.cand { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10.5px; color:var(--muted); cursor:pointer; flex-shrink:0; }
+.cand .pct { font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.pct-hi { color:#E88A6A; } .pct-mid { color:var(--brassl); } .pct-lo { color:var(--muted); }
+
+nav { display:flex; background:var(--ink2); border-top:2px solid var(--brassd); flex-shrink:0; padding-bottom:env(safe-area-inset-bottom); }
+.navbtn { flex:1; background:transparent; border:none; padding:9px 4px 10px; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--muted); font-size:11px; cursor:pointer; }
+.navbtn.active { color:var(--brassl); font-weight:600; }
+.navbtn svg { width:20px; height:20px; }
+
+.overlay { position:fixed; inset:0; background:rgba(10,16,18,.65); display:flex; align-items:flex-end; justify-content:center; z-index:30; }
+.sheet { background:var(--ink); width:100%; max-width:480px; border-radius:18px 18px 0 0; padding:10px 16px calc(env(safe-area-inset-bottom) + 28px); position:relative; max-height:86vh; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:14px; }
+.handle { width:36px; height:4px; background:#2A4046; border-radius:999px; margin:0 auto 2px; }
+.sclose { position:absolute; top:12px; right:14px; background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:18px; }
+.modal { background:var(--paper); color:var(--ondark); width:88%; max-width:340px; border-radius:14px; padding:20px; margin:auto; align-self:center; display:flex; flex-direction:column; gap:10px; max-height:88vh; overflow-y:auto; }
+.modal h3 { font-size:16px; margin:0; }
+.modal p { font-size:13.5px; color:var(--mutedp); margin:0; line-height:1.45; }
+.note { font-size:12px; color:var(--mutedp); line-height:1.45; background:var(--paper2); border-radius:8px; padding:10px; }
+
+.progresswrap { width:100%; max-width:320px; }
+.progressbar { height:4px; background:var(--moss); border-radius:999px; transition:width .3s; width:0%; }
+.progresslabel { font-size:11.5px; color:var(--muted); margin-top:5px; display:block; text-align:center; }
+
+.cam { position:fixed; inset:0; background:#000; z-index:50; display:flex; flex-direction:column; }
+.camview { flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.camview video { position:absolute; width:100%; height:100%; object-fit:cover; transform-origin:center; }
+.camring { position:absolute; width:min(72vw,52vh); height:min(72vw,52vh); border:2px dashed rgba(232,192,124,.75); border-radius:50%; pointer-events:none; }
+.camctrl { flex-shrink:0; background:rgba(20,32,38,.96); padding:12px 18px calc(env(safe-area-inset-bottom) + 16px); display:flex; flex-direction:column; gap:12px; }
+.camzoomrow { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; }
+.camzoomrow input[type=range] { flex:1; accent-color:var(--brass); }
+.camzoomval { font-family:'IBM Plex Mono',monospace; color:var(--brassl); min-width:40px; text-align:right; }
+.cambtnrow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.camshutter { width:66px; height:66px; border-radius:50%; border:4px solid #fff; background:var(--brassl); cursor:pointer; }
+.camshutter:active { transform:scale(.94); }
+.camside { background:transparent; border:none; color:var(--muted); font-size:13px; cursor:pointer; padding:10px; }
+.toast { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 78px); left:50%; transform:translateX(-50%); background:var(--brassl); color:#2A1D08; font-size:13.5px; font-weight:600; padding:10px 18px; border-radius:16px; z-index:40; box-shadow:0 6px 18px rgba(0,0,0,.35); max-width:86vw; text-align:center; line-height:1.35; opacity:0; pointer-events:none; transition:opacity .25s; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <span class="htitle">Kronen<br>Korken</span>
+    <div class="hcount"><span class="hnum" id="count">0</span><span class="hlabel">Stück</span></div>
+    <button class="iconbtn" id="btnSettings" title="Einstellungen">⚙</button>
+    <button class="iconbtn" id="btnBackup" title="Sicherung">⇅</button>
+  </div>
+</header>
+
+<main>
+  <!-- Gallery -->
+  <section class="view active" id="view-gallery">
+    <div class="search">
+      <span style="color:var(--muted)">🔍</span>
+      <input id="searchInput" placeholder="Marke oder Land suchen…" />
+    </div>
+    <div id="galleryContent"></div>
+  </section>
+
+  <!-- Erfassen: photograph → auto-compare → decide -->
+  <section class="view center" id="view-capture">
+    <div id="capSlot" style="padding:8px;cursor:pointer"></div>
+    <input type="file" accept="image/*" capture="environment" id="capFile" style="display:none" />
+    <button class="btn b-brass" id="btnCapPhoto">📷 <span id="capPhotoLabel">Kronenkorken fotografieren</span></button>
+    <div id="capBody" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px"></div>
+    <p class="hint" id="sessionHint" style="display:none"></p>
+  </section>
+
+</main>
+
+<nav>
+  <button class="navbtn active" data-view="gallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Sammlung</span></button>
+  <button class="navbtn" data-view="capture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>Erfassen</span></button>
+</nav>
+
+<div id="modalRoot"></div>
+
+<div class="cam" id="cam" style="display:none">
+  <div class="camview">
+    <video id="camVideo" playsinline autoplay muted></video>
+    <div class="camring"></div>
+  </div>
+  <div class="camctrl">
+    <div class="camzoomrow">
+      <span>Zoom</span>
+      <input type="range" id="camZoom" min="1" max="5" step="0.1" value="1">
+      <span class="camzoomval" id="camZoomVal">1.0×</span>
+    </div>
+    <div class="cambtnrow">
+      <button class="camside" id="camCancel">Abbrechen</button>
+      <button class="camshutter" id="camShutter" aria-label="Auslösen"></button>
+      <button class="camside" id="camFallback">Kamera-App</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================= Config ================= */
+const THUMB_DIM = 192, THUMB_Q = .7;
+const THUMB_V = 2;
+const STORE_DIM = 512, STORE_Q = .7;
+const SHORTLIST = 18;           // candidates shown (AI check uses the top 8)
+const GAP_STRONG = .05;   // top-1 must clearly stand out
+const SIG_V = 5;
+const EXPORT_VER = 3;
+const AI_MODEL = "claude-sonnet-4-6";
+
+/* ================= IndexedDB ================= */
+let db;
+function openDB() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open("kronenkorken", 1);
+    rq.onupgradeneeded = () => {
+      const d = rq.result;
+      if (!d.objectStoreNames.contains("caps")) d.createObjectStore("caps", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("settings")) d.createObjectStore("settings", { keyPath: "key" });
+    };
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error || new Error("IndexedDB nicht verfügbar."));
+  });
+}
+function tx(store, mode, fn) {
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, mode);
+    const s = t.objectStore(store);
+    const out = fn(s);
+    t.oncomplete = () => res(out && out.result !== undefined ? out.result : undefined);
+    t.onerror = () => rej(t.error);
+  });
+}
+const dbPutCap    = cap => tx("caps", "readwrite", s => s.put(cap));
+const dbDeleteCap = id  => tx("caps", "readwrite", s => s.delete(id));
+const dbClearCaps = ()  => tx("caps", "readwrite", s => s.clear());
+function dbAllCaps() {
+  return new Promise((res, rej) => {
+    const t = db.transaction("caps", "readonly");
+    const rq = t.objectStore("caps").getAll();
+    rq.onsuccess = () => res(rq.result || []);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+function dbGetSetting(key) {
+  return new Promise((res) => {
+    const t = db.transaction("settings", "readonly");
+    const rq = t.objectStore("settings").get(key);
+    rq.onsuccess = () => res(rq.result ? rq.result.value : null);
+    rq.onerror = () => res(null);
+  });
+}
+const dbSetSetting = (key, value) => tx("settings", "readwrite", s => s.put({ key, value }));
+
+/* ================= State ================= */
+let caps = [];           // [{id, brand, country, createdAt, image, thumb, hash(base64), avg[r,g,b]}]
+let view = "gallery";
+let sessionCount = 0;
+let apiKey = null;
+
+/* ================= Utils ================= */
+const $ = id => document.getElementById(id);
+const esc = s => (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+let toastTimer;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), msg.length > 60 ? 7000 : 3200);
+}
+function fileToDataUrl(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onerror = () => rej(new Error("Datei konnte nicht gelesen werden."));
+    r.onload = () => res(r.result);
+    r.readAsDataURL(file);
+  });
+}
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error("Bild konnte nicht geladen werden."));
+    img.src = src;
+  });
+}
+async function resizeDataUrl(src, maxDim, q) {
+  const img = await loadImage(src);
+  let { width, height } = img;
+  if (width >= height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+  else if (height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+  const c = document.createElement("canvas");
+  c.width = width; c.height = height;
+  c.getContext("2d").drawImage(img, 0, 0, width, height);
+  return c.toDataURL("image/jpeg", q);
+}
+function dataUrlParts(u) {
+  const [h, b] = (u || "").split(",");
+  return { media: ((h || "").match(/data:(.*);base64/) || [])[1] || "image/jpeg", base64: b || "" };
+}
+
+/* ============ Signature v4: ternary contrast bits, centre probing, colour de-weighted ============ */
+const A = 48, R = 14, RINGS = 6, HUEB = 18;
+
+// fast popcount for up to 18-bit values
+const POPC = new Uint8Array(1 << 18);
+for (let i = 1; i < POPC.length; i++) POPC[i] = POPC[i >> 1] + (i & 1);
+
+async function cropInfo(dataUrl) {
+  const img = await loadImage(dataUrl);
+  const S = 160;
+  const c = document.createElement("canvas"); c.width = S; c.height = S;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  x.drawImage(img, 0, 0, S, S);
+  const d = x.getImageData(0, 0, S, S).data;
+  const rs = [], gs = [], bs = [];
+  for (let i = 0; i < S; i++) {
+    for (const [px, py] of [[i, 0], [i, S - 1], [0, i], [S - 1, i]]) {
+      const o = (py * S + px) * 4; rs.push(d[o]); gs.push(d[o + 1]); bs.push(d[o + 2]);
+    }
+  }
+  rs.sort((a, b) => a - b); gs.sort((a, b) => a - b); bs.sort((a, b) => a - b);
+  const m = rs.length >> 1, bg = [rs[m], gs[m], bs[m]];
+  const TH = 52, THS = 110;
+  let minX = S, minY = S, maxX = -1, maxY = -1, cnt = 0, scx = 0, scy = 0, scw = 0;
+  for (let y = 0; y < S; y++) for (let xx = 0; xx < S; xx++) {
+    const o = (y * S + xx) * 4;
+    const dist = Math.abs(d[o] - bg[0]) + Math.abs(d[o + 1] - bg[1]) + Math.abs(d[o + 2] - bg[2]);
+    if (dist > TH) { cnt++; if (xx < minX) minX = xx; if (xx > maxX) maxX = xx; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+    if (dist > THS) { scx += xx; scy += y; scw++; }
+  }
+  const area = (maxX - minX) * (maxY - minY);
+  let sx, sy, sw;
+  if (cnt > S * S * .02 && area > S * S * .04 && maxX > minX && maxY > minY) {
+    let cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    if (scw > S * S * .01) { cx = .5 * cx + .5 * (scx / scw); cy = .5 * cy + .5 * (scy / scw); }
+    sw = Math.max(maxX - minX, maxY - minY) * 1.06;
+    sx = cx - sw / 2; sy = cy - sw / 2;
+  } else { sw = S; sx = 0; sy = 0; }
+  const k = img.width / S, ky = img.height / S;
+  return { img, sx: sx * k, sy: sy * ky, sw: sw * Math.max(k, ky) };
+}
+
+async function computeSignatureAt(ci, offX = 0, offY = 0) {
+  const { img, sx, sy, sw } = ci;
+  const S = 160;
+  const c = document.createElement("canvas"); c.width = S; c.height = S;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  x.fillStyle = "#808080"; x.fillRect(0, 0, S, S);
+  x.drawImage(img, sx + offX * sw, sy + offY * sw, sw, sw, 0, 0, S, S);
+  const d = x.getImageData(0, 0, S, S).data;
+  const cx = S / 2, cy = S / 2, maxR = S * .47;
+  let mr = 0, mg = 0, mb = 0, mn = 0;
+  for (let y = 0; y < S; y += 2) for (let xx = 0; xx < S; xx += 2) {
+    const dx = xx - cx, dy = y - cy; if (dx * dx + dy * dy > maxR * maxR) continue;
+    const o = (y * S + xx) * 4; mr += d[o]; mg += d[o + 1]; mb += d[o + 2]; mn++;
+  }
+  mr /= mn; mg /= mn; mb /= mn;
+  const clampf = v => Math.max(.6, Math.min(1.8, v));
+  const kr = clampf(128 / (mr || 128)), kg = clampf(128 / (mg || 128)), kb = clampf(128 / (mb || 128));
+  const gAt = (px, py) => {
+    let r = 0, g = 0, b = 0;
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+      const qx = Math.max(0, Math.min(S - 1, (px + dx) | 0)), qy = Math.max(0, Math.min(S - 1, (py + dy) | 0));
+      const o = (qy * S + qx) * 4; r += d[o]; g += d[o + 1]; b += d[o + 2];
+    }
+    return [r / 4 * kr, g / 4 * kg, b / 4 * kb];
+  };
+  const polarG = [];
+  const ringAcc = Array.from({ length: RINGS }, () => [0, 0, 0, 0]);
+  const hue = new Float32Array(HUEB); let hueW = 0;
+  for (let a = 0; a < A; a++) {
+    const row = new Float32Array(R);
+    const ang = a / A * 2 * Math.PI;
+    for (let r = 0; r < R; r++) {
+      const rad = maxR * (.15 + .85 * (r + .5) / R);
+      const [rr, gg, bb] = gAt(cx + rad * Math.cos(ang), cy + rad * Math.sin(ang));
+      row[r] = rr * .299 + gg * .587 + bb * .114;
+      const ring = Math.min(RINGS - 1, (r / R * RINGS) | 0);
+      ringAcc[ring][0] += rr; ringAcc[ring][1] += gg; ringAcc[ring][2] += bb; ringAcc[ring][3]++;
+      const mx = Math.max(rr, gg, bb), mnv = Math.min(rr, gg, bb);
+      const sat = mx ? (mx - mnv) / mx : 0;
+      if (sat > .12 && mx > 30) {
+        let h;
+        if (mx === rr) h = ((gg - bb) / (mx - mnv)) % 6; else if (mx === gg) h = (bb - rr) / (mx - mnv) + 2; else h = (rr - gg) / (mx - mnv) + 4;
+        h = (h * 60 + 360) % 360;
+        hue[Math.min(HUEB - 1, (h / 360 * HUEB) | 0)] += sat; hueW += sat;
+      }
+    }
+    polarG.push(row);
+  }
+  const polar = new Array(A), polar2 = new Array(A), polarAng = new Array(A);
+  for (let a = 0; a < A; a++) {
+    let v = 0, v2 = 0, w = 0;
+    for (let r = 0; r < R - 1; r++) if (polarG[a][r] > polarG[a][r + 1]) v |= 1 << r;
+    for (let r = 0; r < R - 2; r++) if (polarG[a][r] > polarG[a][r + 2]) v2 |= 1 << r;
+    const nb = polarG[(a + 1) % A];
+    for (let r = 0; r < R; r++) if (polarG[a][r] > nb[r]) w |= 1 << r;
+    polar[a] = v; polar2[a] = v2; polarAng[a] = w;
+  }
+  const gm = (mr * kr * .299 + mg * kg * .587 + mb * kb * .114) || 128;
+  const rings = ringAcc.map(q => q[3] ? [q[0] / q[3] * 128 / gm, q[1] / q[3] * 128 / gm, q[2] / q[3] * 128 / gm] : [128, 128, 128]);
+  const hueN = hueW > 0 ? Array.from(hue, v => v / hueW) : Array.from(hue);
+  return { sigV: SIG_V, polar, polar2, polarAng, rings, hue: hueN, hueW };
+}
+async function computeSignature(dataUrl) {
+  return computeSignatureAt(await cropInfo(dataUrl));
+}
+function polarSim(s1, s2) {
+  const bitsTotal = A * (R - 1) + A * (R - 2) + A * R;
+  let best = 0;
+  for (let s = 0; s < A; s++) {
+    let diff = 0;
+    for (let a = 0; a < A; a++) {
+      const j = (a + s) % A;
+      diff += POPC[s1.polar[a] ^ s2.polar[j]];
+      diff += POPC[s1.polar2[a] ^ s2.polar2[j]];
+      diff += POPC[s1.polarAng[a] ^ s2.polarAng[j]];
+    }
+    const sim = 1 - diff / bitsTotal;
+    if (sim > best) best = sim;
+  }
+  return best;
+}
+function ringSim(r1, r2) {
+  let dsum = 0;
+  for (let i = 0; i < RINGS; i++) dsum += Math.abs(r1[i][0] - r2[i][0]) + Math.abs(r1[i][1] - r2[i][1]) + Math.abs(r1[i][2] - r2[i][2]);
+  return Math.max(0, 1 - (dsum / RINGS) / 240);
+}
+function hueSim(h1, h2, w1, w2) {
+  if ((w1 || 0) < 1 && (w2 || 0) < 1) return .6;
+  let l1 = 0; for (let i = 0; i < HUEB; i++) l1 += Math.abs(h1[i] - h2[i]);
+  return Math.max(0, 1 - l1 * .5);
+}
+function hasSig(c) { return c.sigV === SIG_V && Array.isArray(c.polar) && Array.isArray(c.polar2) && Array.isArray(c.polarAng); }
+function score(q, c) {
+  if (!hasSig(c)) return 0;
+  return .62 * polarSim(q, c) + .14 * ringSim(q.rings, c.rings) + .24 * hueSim(q.hue, c.hue, q.hueW, c.hueW);
+}
+
+/* ================= AI compare (optional) ================= */
+function makeGrid(items, cell = 96) {
+  return new Promise(async (res) => {
+    const cols = Math.min(4, items.length), rows = Math.ceil(items.length / cols);
+    const LH = 16, GAP = 3;
+    const c = document.createElement("canvas");
+    c.width = cols * (cell + GAP); c.height = rows * (cell + LH + GAP);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#111"; ctx.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < items.length; i++) {
+      const x = (i % cols) * (cell + GAP), y = Math.floor(i / cols) * (cell + LH + GAP);
+      try { ctx.drawImage(await loadImage(items[i].image), x, y, cell, cell); }
+      catch { ctx.fillStyle = "#222"; ctx.fillRect(x, y, cell, cell); }
+      ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(x, y + cell - LH, cell, LH);
+      ctx.fillStyle = "#edc97a"; ctx.font = "bold 12px monospace"; ctx.textAlign = "center";
+      ctx.fillText(String(i + 1), x + cell / 2, y + cell - 4);
+    }
+    res(c.toDataURL("image/jpeg", .82));
+  });
+}
+async function aiCompare(newUrl, candidates) {
+  const gridUrl = await makeGrid(candidates);
+  const n = dataUrlParts(newUrl), g = dataUrlParts(gridUrl);
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: AI_MODEL, max_tokens: 120,
+      messages: [{ role: "user", content: [
+        { type: "text", text:
+          "Erstes Bild: Foto eines gefundenen Kronenkorkens. Zweites Bild: nummeriertes Raster mit " + candidates.length + " katalogisierten Kronenkorken.\n" +
+          "Vergleiche rein visuell (Logo, Farben, Schriftzug, Layout; Beleuchtung/Winkel ignorieren).\n" +
+          'Antworte NUR mit JSON: {"match": <Nummer 1–' + candidates.length + ' oder null>, "confidence": "hoch"|"mittel"|"niedrig"}' },
+        { type: "image", source: { type: "base64", media_type: n.media, data: n.base64 } },
+        { type: "image", source: { type: "base64", media_type: g.media, data: g.base64 } },
+      ]}],
+    }),
+  });
+  let data;
+  try { data = await res.json(); } catch { throw new Error("KI-Antwort unlesbar."); }
+  if (!res.ok) throw new Error((data.error && data.error.message) || ("HTTP " + res.status));
+  const text = (data.content || []).map(b => b.text || "").join("\n");
+  const m = text.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
+  return JSON.parse(m ? m[0] : text);
+}
+
+/* ================= Cap frame rendering ================= */
+function scallopPath(cx, cy, baseR, amp, teeth, steps = 200) {
+  let d = "";
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps * Math.PI * 2;
+    const r = baseR + amp * Math.cos(teeth * t);
+    d += (i ? "L " : "M ") + (cx + r * Math.cos(t)).toFixed(2) + " " + (cy + r * Math.sin(t)).toFixed(2) + " ";
+  }
+  return d + "Z";
+}
+const CAP_PATH = scallopPath(50, 50, 42, 6.2, 21);
+let gradN = 0;
+function capFrame(src, size) {
+  const gid = "gr" + (gradN++);
+  const inset = Math.round(size * .135);
+  return '<div class="capframe" style="width:' + size + 'px;height:' + size + 'px">' +
+    '<svg viewBox="0 0 100 100" width="' + size + '" height="' + size + '">' +
+    '<defs><linearGradient id="' + gid + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
+    '<stop offset="0%" stop-color="#E8C07C"/><stop offset="55%" stop-color="#BB823B"/><stop offset="100%" stop-color="#7C5824"/>' +
+    '</linearGradient></defs>' +
+    '<path d="' + CAP_PATH + '" fill="url(#' + gid + ')" stroke="#5A3E16" stroke-width="1.1"/></svg>' +
+    '<div class="capinner" style="inset:' + inset + 'px">' +
+    (src ? '<img src="' + src + '" alt="">' : '<span style="font-size:' + Math.round(size * .3) + 'px">📷</span>') +
+    '</div></div>';
+}
+
+/* ================= Gallery ================= */
+function renderCount() { $("count").textContent = caps.length.toLocaleString("de-DE"); }
+function renderGallery() {
+  const q = $("searchInput").value.trim().toLowerCase();
+  const asc = [...caps].sort((a, b) => a.createdAt - b.createdAt);
+  const num = {}; asc.forEach((c, i) => num[c.id] = i + 1);
+  const list = [...caps].sort((a, b) => b.createdAt - a.createdAt)
+    .filter(c => !q || (c.brand + " " + c.country).toLowerCase().includes(q));
+  const root = $("galleryContent");
+  if (caps.length === 0) {
+    root.innerHTML = '<div class="empty">' + capFrame(null, 84) +
+      '<p>Noch keine Kronenkorken.<br>Fotografiere den ersten unter „Erfassen" oder lade eine Sicherung.</p>' +
+      '<button class="btn b-outline" onclick="openBackup()">⇅ Sicherung laden</button></div>';
+    return;
+  }
+  if (list.length === 0) { root.innerHTML = '<div class="empty"><p>Kein Treffer für „' + esc(q) + '".</p></div>'; return; }
+  root.innerHTML = '<div class="grid">' + list.map(c =>
+    '<button class="cell" onclick="openDetail(\'' + c.id + '\')">' +
+    '<span class="cellno">' + String(num[c.id]).padStart(4, "0") + '</span>' +
+    capFrame(c.thumb, 96) +
+    '<span class="cellbrand">' + esc(c.brand) || "" + '</span>'.replace("><", ">" + (esc(c.brand) || "Ohne Namen") + "<") +
+    (c.country ? '<span class="cellcountry">' + esc(c.country) + '</span>' : "") +
+    '</button>').join("") + '</div>';
+}
+
+/* ================= Views / nav ================= */
+function switchView(v) {
+  view = v;
+  document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+  $("view-" + v).classList.add("active");
+  document.querySelectorAll(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+  if (v === "gallery") renderGallery();
+}
+document.querySelectorAll(".navbtn").forEach(b => b.addEventListener("click", () => switchView(b.dataset.view)));
+$("searchInput").addEventListener("input", renderGallery);
+
+/* ================= In-app camera ================= */
+let camStream = null, camTarget = null, camZoomVal = 1, camNativeZoom = false;
+
+async function openCam(target) {
+  camTarget = target;
+  camZoomVal = parseFloat(await dbGetSetting("camZoom")) || 2;
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 2048 }, height: { ideal: 2048 } },
+      audio: false,
+    });
+  } catch (e) {
+    // no permission / not supported → native camera app fallback
+    $("capFile").click();
+    return;
+  }
+  const video = $("camVideo");
+  video.srcObject = camStream;
+  $("cam").style.display = "flex";
+  const track = camStream.getVideoTracks()[0];
+  const caps2 = track.getCapabilities ? track.getCapabilities() : {};
+  camNativeZoom = !!(caps2.zoom && caps2.zoom.max > 1);
+  const zoomEl = $("camZoom");
+  if (camNativeZoom) { zoomEl.min = Math.max(1, caps2.zoom.min); zoomEl.max = Math.min(6, caps2.zoom.max); zoomEl.step = caps2.zoom.step || .1; }
+  else { zoomEl.min = 1; zoomEl.max = 5; zoomEl.step = .1; }
+  camZoomVal = Math.min(parseFloat(zoomEl.max), Math.max(parseFloat(zoomEl.min), camZoomVal));
+  zoomEl.value = camZoomVal;
+  applyCamZoom();
+}
+function applyCamZoom() {
+  $("camZoomVal").textContent = camZoomVal.toFixed(1) + "×";
+  const track = camStream && camStream.getVideoTracks()[0];
+  if (camNativeZoom && track) { track.applyConstraints({ advanced: [{ zoom: camZoomVal }] }).catch(() => {}); $("camVideo").style.transform = ""; }
+  else $("camVideo").style.transform = "scale(" + camZoomVal + ")";
+}
+$("camZoom").addEventListener("input", e => { camZoomVal = parseFloat(e.target.value); applyCamZoom(); });
+function closeCam() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  $("cam").style.display = "none";
+  dbSetSetting("camZoom", String(camZoomVal)).catch(() => {});
+}
+$("camCancel").addEventListener("click", closeCam);
+$("camFallback").addEventListener("click", () => { closeCam(); $("capFile").click(); });
+$("camShutter").addEventListener("click", async () => {
+  const video = $("camVideo");
+  if (!video.videoWidth) return;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  // capture the centre square; apply digital zoom by cropping unless the lens zoomed natively
+  const zoom = camNativeZoom ? 1 : camZoomVal;
+  const side = Math.min(vw, vh) / zoom;
+  const c = document.createElement("canvas");
+  const OUT = Math.min(1024, Math.round(side));
+  c.width = OUT; c.height = OUT;
+  c.getContext("2d").drawImage(video, (vw - side) / 2, (vh - side) / 2, side, side, 0, 0, OUT, OUT);
+  const url = c.toDataURL("image/jpeg", .88);
+  closeCam();
+  try { await acceptCapturedPhoto(url); }
+  catch (e) { toast("Foto konnte nicht verarbeitet werden."); }
+});
+
+/* ================= Capture flow (photo → auto-compare → decide) ================= */
+let capPhoto = null, capRank = [], capBusy = false;
+
+function renderCapSlot() {
+  $("capSlot").innerHTML = capFrame(capPhoto ? capPhoto.thumb : null, 150);
+  $("capPhotoLabel").textContent = capPhoto ? "Anderes Foto" : "Kronenkorken fotografieren";
+}
+function resetCapture() {
+  capPhoto = null; capRank = [];
+  renderCapSlot();
+  $("capBody").innerHTML = "";
+}
+$("btnCapPhoto").addEventListener("click", () => openCam("cap"));
+$("capSlot").addEventListener("click", () => openCam("cap"));
+$("capFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    const raw = await fileToDataUrl(f);
+    await acceptCapturedPhoto(raw);
+  } catch (err) { toast("Foto konnte nicht verarbeitet werden."); }
+});
+
+async function acceptCapturedPhoto(rawUrl) {
+  const [image, thumb] = await Promise.all([resizeDataUrl(rawUrl, STORE_DIM, STORE_Q), resizeDataUrl(rawUrl, THUMB_DIM, THUMB_Q)]);
+  capPhoto = { image, thumb, sig: null };
+  renderCapSlot();
+  runCaptureCompare();
+}
+
+function fieldsAndButtonsHtml(showDiscard) {
+  return '<div class="card">' +
+    '<label class="field"><span>Marke / Brauerei (optional)</span><input id="capBrand" placeholder="z. B. Krombacher"></label>' +
+    '<label class="field"><span>Land / Region (optional)</span><input id="capCountry" placeholder="z. B. Deutschland"></label></div>' +
+    '<div class="rowgap" style="width:100%;max-width:340px">' +
+    (showDiscard ? '<button class="btn b-ghost" style="flex:1" onclick="resetCapture()">✕ Verwerfen</button>' : '') +
+    '<button class="btn b-primary" style="flex:1" id="btnAdopt">✓ Aufnehmen</button></div>';
+}
+
+async function runCaptureCompare() {
+  const body = $("capBody");
+  if (caps.length === 0) {
+    body.innerHTML = '<p class="hint">Erster Kronenkorken der Sammlung.</p>' + fieldsAndButtonsHtml(true);
+    $("btnAdopt").addEventListener("click", adoptCapture);
+    return;
+  }
+  body.innerHTML = '<p class="hint"><span class="spin">◌</span> Gleiche mit ' + caps.length.toLocaleString("de-DE") + ' Korken ab…</p>';
+  try {
+    const ci = await cropInfo(capPhoto.image);
+    const sig = await computeSignatureAt(ci);
+    capPhoto.sig = sig;
+    // stage 1: full scan with the centred signature
+    let ranked = caps.map(c => ({ cap: c, s: score(sig, c) })).sort((a, b) => b.s - a.s);
+    // stage 2: refine the leaders with small centre offsets (robust against crop jitter)
+    const offs = [[.03, 0], [-.03, 0], [0, .03], [0, -.03]];
+    const qsigs = [sig];
+    for (const [ox, oy] of offs) qsigs.push(await computeSignatureAt(ci, ox, oy));
+    const top = ranked.slice(0, Math.min(40, ranked.length));
+    for (const t of top) {
+      for (const q of qsigs) { const s2 = score(q, t.cap); if (s2 > t.s) t.s = s2; }
+    }
+    top.sort((a, b) => b.s - a.s);
+    capRank = top.slice(0, SHORTLIST);
+    renderCaptureResult();
+  } catch (e) {
+    body.innerHTML = '<div class="result r-rust"><div class="rhead">⚠ Abgleich fehlgeschlagen</div><p class="rtext">' + esc(e.message || String(e)) + '</p></div>' + fieldsAndButtonsHtml(true);
+    $("btnAdopt").addEventListener("click", adoptCapture);
+  }
+}
+
+function pctClass(s) { return s >= .70 ? "pct-hi" : s >= .60 ? "pct-mid" : "pct-lo"; }
+function renderCaptureResult() {
+  const best = capRank[0], second = capRank[1];
+  const gap = best && second ? best.s - second.s : 1;
+  const out = [];
+  // Verdict: absolute score AND clear lead over the runner-up
+  if (best && best.s >= .70 && gap >= GAP_STRONG) {
+    out.push('<div class="result r-rust"><div class="rhead">⚠ Wahrscheinlich schon vorhanden</div>' +
+      '<div class="rpair"><div class="ritem">' + capFrame(capPhoto.thumb, 88) + '<span>Fund</span></div>' +
+      '<div class="ritem">' + capFrame(best.cap.thumb, 88) + '<span>' + (esc(best.cap.brand) || "In Sammlung") + '</span></div></div>' +
+      '<p class="rtext">Ähnlichkeit <strong>' + Math.round(best.s * 100) + '%</strong>, deutlich vor Platz 2 (' + Math.round(second ? second.s * 100 : 0) + '%). Bitte vergleichen.</p></div>');
+  } else if (best && best.s >= .64) {
+    out.push('<div class="result" style="border:1px solid var(--brassd);background:var(--ink2)"><div class="rhead">≈ Ähnliche gefunden – bitte unten vergleichen</div>' +
+      '<p class="rtext">Bester Kandidat: ' + Math.round(best.s * 100) + '%. Kein eindeutiges Duplikat, schau kurz über die Bilder.</p></div>');
+  } else {
+    out.push('<div class="result r-moss"><div class="rhead">✓ Kein ähnlicher Korken gefunden</div>' +
+      '<p class="rtext">Höchste Ähnlichkeit: ' + (best ? Math.round(best.s * 100) : 0) + '% — vermutlich neu.</p></div>');
+  }
+  out.push('<div style="width:100%;max-width:340px"><p class="hint" style="margin-bottom:6px">Ähnlichste in der Sammlung (antippen zum Vergleichen):</p><div class="candrow">' +
+    capRank.map(x => '<div class="cand" onclick="openDetail(\'' + x.cap.id + '\')">' + capFrame(x.cap.thumb, 56) +
+      '<span class="pct ' + pctClass(x.s) + '">' + Math.round(x.s * 100) + '%</span></div>').join("") + '</div></div>');
+  if (apiKey) {
+    out.push('<button class="btn b-outline wide" style="max-width:340px" id="btnAi">✨ Mit KI feinprüfen</button>');
+  }
+  out.push(fieldsAndButtonsHtml(true));
+  $("capBody").innerHTML = out.join("");
+  $("btnAdopt").addEventListener("click", adoptCapture);
+  const ai = $("btnAi");
+  if (ai) ai.addEventListener("click", runAi);
+}
+
+async function adoptCapture() {
+  if (!capPhoto || capBusy) return;
+  capBusy = true;
+  try {
+    const sig = capPhoto.sig || await computeSignature(capPhoto.image);
+    const cap = {
+      id: "cap_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+      brand: ($("capBrand") ? $("capBrand").value.trim() : ""), country: ($("capCountry") ? $("capCountry").value.trim() : ""),
+      createdAt: Date.now(), image: capPhoto.image, thumb: capPhoto.thumb, thumbV: THUMB_V, ...sig,
+    };
+    await dbPutCap(cap);
+    caps.push(cap);
+    sessionCount++;
+    $("sessionHint").style.display = "";
+    $("sessionHint").textContent = "Diese Sitzung: " + sessionCount + " erfasst";
+    resetCapture(); renderCount();
+    toast("Gespeichert · Nr. " + String(caps.length).padStart(4, "0"));
+  } catch (e) {
+    toast("Speichern fehlgeschlagen: " + (e.message || e));
+  } finally { capBusy = false; }
+}
+
+async function runAi() {
+  const btn = $("btnAi");
+  if (!capPhoto || capRank.length === 0) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin">◌</span> KI prüft…'; }
+  try {
+    const aiCands = capRank.slice(0, 8).map(x => x.cap);
+    const r = await aiCompare(capPhoto.image, aiCands);
+    let html;
+    if (r.match >= 1 && r.match <= aiCands.length) {
+      const hit = aiCands[r.match - 1];
+      html = '<div class="result r-rust" style="max-width:340px"><div class="rhead">✨ KI: bereits vorhanden (' + esc(r.confidence || "?") + ')</div>' +
+        '<div class="rpair"><div class="ritem">' + capFrame(capPhoto.thumb, 88) + '<span>Fund</span></div>' +
+        '<div class="ritem">' + capFrame(hit.thumb, 88) + '<span>' + (esc(hit.brand) || "In Sammlung") + '</span></div></div></div>';
+    } else {
+      html = '<div class="result r-moss" style="max-width:340px"><div class="rhead">✨ KI: kein Duplikat unter den Kandidaten</div></div>';
+    }
+    if (btn) btn.outerHTML = html;
+  } catch (e) {
+    toast("KI-Prüfung fehlgeschlagen: " + (e.message || e));
+    if (btn) { btn.disabled = false; btn.innerHTML = '✨ Mit KI feinprüfen'; }
+  }
+}
+
+/* ================= Detail sheet ================= */
+function openDetail(id) {
+  const cap = caps.find(c => c.id === id);
+  if (!cap) return;
+  $("modalRoot").innerHTML =
+    '<div class="overlay" onclick="closeModal(event)">' +
+    '<div class="sheet" onclick="event.stopPropagation()">' +
+    '<div class="handle"></div>' +
+    '<button class="sclose" onclick="closeModal()">✕</button>' +
+    capFrame(cap.image || cap.thumb, 160) +
+    '<div class="card" style="max-width:360px">' +
+    '<label class="field"><span>Marke / Brauerei</span><input id="dBrand" value="' + esc(cap.brand) + '"></label>' +
+    '<label class="field"><span>Land / Region</span><input id="dCountry" value="' + esc(cap.country) + '"></label></div>' +
+    '<div class="rowgap">' +
+    '<button class="btn b-rust" onclick="deleteDetail(\'' + id + '\')">🗑 Löschen</button>' +
+    '<button class="btn b-primary" onclick="saveDetail(\'' + id + '\')">✓ Speichern</button>' +
+    '</div></div></div>';
+}
+function closeModal(e) { if (!e || e.target === e.currentTarget || !e.target) $("modalRoot").innerHTML = ""; }
+async function saveDetail(id) {
+  const cap = caps.find(c => c.id === id);
+  if (!cap) return;
+  cap.brand = $("dBrand").value.trim(); cap.country = $("dCountry").value.trim();
+  try { await dbPutCap(cap); toast("Aktualisiert."); }
+  catch (e) { toast("Speichern fehlgeschlagen: " + (e.message || e)); }
+  closeModal(); renderGallery();
+}
+async function deleteDetail(id) {
+  if (!confirm("Diesen Kronenkorken endgültig löschen?")) return;
+  try {
+    await dbDeleteCap(id);
+    caps = caps.filter(c => c.id !== id);
+    toast("Gelöscht."); renderCount(); renderGallery();
+  } catch (e) { toast("Löschen fehlgeschlagen: " + (e.message || e)); }
+  closeModal();
+}
+
+/* ================= Settings ================= */
+$("btnSettings").addEventListener("click", () => {
+  $("modalRoot").innerHTML =
+    '<div class="overlay" onclick="closeModal(event)">' +
+    '<div class="modal" onclick="event.stopPropagation()">' +
+    '<h3>Einstellungen</h3>' +
+    '<p>Optional: Anthropic-API-Schlüssel für die KI-Feinprüfung. Wird nur auf diesem Gerät gespeichert.</p>' +
+    '<label class="field"><span>API-Schlüssel</span><input id="setKey" type="password" placeholder="sk-ant-…" value="' + esc(apiKey || "") + '"></label>' +
+    '<button class="btn b-primary wide" onclick="saveSettings()">✓ Speichern</button>' +
+    '<div class="note">Schlüssel gibt es unter console.anthropic.com. Die KI-Prüfung kostet pro Aufruf wenige Cent. Ohne Schlüssel funktioniert der lokale Blitz-Abgleich uneingeschränkt.</div>' +
+    '<button class="btn b-ghost wide" onclick="closeModal()">Schließen</button>' +
+    '</div></div>';
+});
+async function saveSettings() {
+  apiKey = $("setKey").value.trim() || null;
+  await dbSetSetting("apiKey", apiKey);
+  toast(apiKey ? "Schlüssel gespeichert." : "Schlüssel entfernt.");
+  closeModal();
+}
+
+/* ================= Backup (export / import) ================= */
+function openBackup() {
+  $("modalRoot").innerHTML =
+    '<div class="overlay" onclick="closeModal(event)">' +
+    '<div class="modal" onclick="event.stopPropagation()">' +
+    '<h3>Sicherung</h3>' +
+    '<p>Deine Sammlung wird automatisch auf dem Gerät gespeichert. Eine Sicherungsdatei schützt zusätzlich vor Geräteverlust.</p>' +
+    '<button class="btn b-primary wide" onclick="doExport()">⇓ Sicherung herunterladen</button>' +
+    '<button class="btn b-outline wide" onclick="document.getElementById(\'impFile\').click()">⇑ Sicherung laden</button>' +
+    '<input type="file" id="impFile" accept=".json,.txt,application/json,text/plain,text/*" style="display:none" onchange="doImport(event)">' +
+    '<button class="btn b-rust wide" onclick="doReset()">Alles löschen</button>' +
+    '<button class="btn b-ghost wide" onclick="closeModal()">Schließen</button>' +
+    '</div></div>';
+}
+$("btnBackup").addEventListener("click", openBackup);
+function doExport() {
+  if (caps.length === 0) { toast("Keine Daten vorhanden."); return; }
+  const payload = { version: EXPORT_VER, exportedAt: new Date().toISOString(), count: caps.length,
+    caps: caps.map(c => ({ id: c.id, brand: c.brand, country: c.country, createdAt: c.createdAt, image: c.image })) };
+  const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "kronenkorken-" + new Date().toISOString().slice(0, 10) + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(caps.length + " Korken exportiert.");
+}
+async function doImport(e) {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data.caps)) throw new Error("Unbekanntes Format.");
+    let n = 0;
+    for (const c of data.caps) {
+      if (!c.id || !c.createdAt || !c.image) continue;
+      const thumb = await resizeDataUrl(c.image, THUMB_DIM, THUMB_Q).catch(() => c.image);
+      const sig = await computeSignature(c.image).catch(() => ({}));
+      const cap = { id: c.id, brand: c.brand || "", country: c.country || "", createdAt: c.createdAt,
+        image: c.image, thumb, thumbV: THUMB_V, ...sig };
+      await dbPutCap(cap);
+      const i = caps.findIndex(x => x.id === cap.id);
+      if (i >= 0) caps[i] = cap; else caps.push(cap);
+      n++;
+    }
+    renderCount(); renderGallery(); closeModal();
+    toast(n + " Korken importiert.");
+  } catch (err) { toast("Import fehlgeschlagen: " + (err.message || err)); }
+}
+async function doReset() {
+  if (!confirm("Wirklich ALLE Kronenkorken endgültig löschen?")) return;
+  await dbClearCaps();
+  caps = []; renderCount(); renderGallery(); closeModal();
+  toast("Sammlung gelöscht.");
+}
+
+/* ================= Init ================= */
+(async function init() {
+  try {
+    db = await openDB();
+    caps = await dbAllCaps();
+    apiKey = await dbGetSetting("apiKey");
+    // backfill signatures for caps imported/created before hashing existed
+    for (const c of caps) {
+      let dirty = false;
+      if (!hasSig(c) && c.image) {
+        try { const s = await computeSignature(c.image); Object.assign(c, s); dirty = true; } catch {}
+      }
+      if (c.thumbV !== THUMB_V && c.image) {
+        try { c.thumb = await resizeDataUrl(c.image, THUMB_DIM, THUMB_Q); c.thumbV = THUMB_V; dirty = true; } catch {}
+      }
+      if (dirty) { try { await dbPutCap(c); } catch {} }
+    }
+    renderCount(); renderGallery(); renderCapSlot();
+  } catch (e) {
+    document.body.innerHTML = '<div style="padding:32px;font-family:sans-serif;color:#DCE6E4;background:#142026;height:100vh">' +
+      '<h2>Speicher nicht verfügbar</h2><p>Diese App braucht einen Browser mit IndexedDB (Safari, Chrome …). Fehler: ' + esc(e.message || String(e)) + '</p></div>';
+  }
+})();
+</script>
+</body>
+</html>
